@@ -65,6 +65,19 @@ SHCAN444
 SHCAN445
 SHCAN446
 SHCAN447
+SHCAC492
+
+Additional contraints on data type and range for items
+SHCAC492     email
+SHCCN478     digital 1 or 2
+SHCCN479     digital 1 or 2
+SHCCN461     digital 1 or 2
+SHCCN463     number from 1 to 7
+SHCDN467     digital 1 or 2
+SHCDN468     number from 1 to 12
+SHCDN486     5 digitals country code (use one from the following set 13307, 10251, 16209, 16527)
+SHCDN471     number from 1 to 7
+SHCDN475     make it blank as ""
 
 Make itemGroup ref having these mapping
 Business Contact  -> "BusContact"
