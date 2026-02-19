@@ -1,0 +1,74 @@
+Generate a python program that will generate very large XML test files based a provided XSD (schema file), sample output file, 
+and data dictionary and their relationships.
+
+Pointers from chat:
+   xmlschema: excellent for validation and dict↔XML conversions, but its encode workflows aren’t optimized for multi-GB streaming generation.
+
+   Best pattern for your case: stream-generate with lxml.etree.xmlfile, and use xmlschema (or lxml XMLSchema) to validate a sample or periodic chunks.
+    
+   pip install lxml xmlschemaItemGroup logic
+   from lxml import etree
+   import xmlschema
+   Uses lxml.etree.xmlfile to stream write (constant memory)
+   Rotates files on a safe boundary (between big blocks)
+   Uses xmlschema for validation (but only first file by default to keep runtime reasonable)The following groups (itemGroup) are defined
+
+Group - Business Contact 
+SHCAR069, key="yes", item value is sequence number SHCAC495, SHCAC496, SHCAB902, SHCA4086 
+
+Group - ServiceProvider 
+SHCAR070, key="yes", item value is sequence number 
+SHCAN263 
+
+Group - ValTechnique SHCAN448, key="yes", item value is a unique value of SHCAN448 in Schedule 2 
+SHCAN449
+
+For SHCAN448, just assign "RU1" or "RU2". Assign them to every other schedule 2 group generated.
+As a result, only two entries in Group - ValTechnique will be generated.
+
+
+Group - Schedule 3
+SHCCN186, key="yes", item value is  sequence number
+SHCCN478, SHCCN456, SHCCN457, SHCCN458, SHCCN459, SHCCN479, SHCCN480, SHCCN481, SHCCN482, SHCCN483, SHCCN484, SHCCN485
+
+Group - Schedule 2
+SHCDN186, key="yes", item value is  sequence number
+SHCAN448, SHCDN460, SHCDN461, SHCDN462, SHCDN463, SHCDN464, SHCDN465, SHCDN466, SHCDN467, SHCDN468, SHCDN486, SHCDN470, SHCDN471, SHCDN487, SHCDN490, SHCDN472, SHCDN473, SHCDN474, SHCDN475, SHCDN477, SHCD9914
+
+Each group can repeat with the destinated key like SHCCN186 and SHCDN186 having a incremental sequence number
+
+
+Add the following item to the output, they don't belong to a group 
+Summary of Schedule 2 
+SHCAN450 Number of Group - Schedule 2 items 
+SHCAN451 Total amount of SHCDN490 
+SHCAN452 
+SHCAN453 
+SHCAN454 
+
+Summary of Schedule 3 
+SHCAN455 Number of Gruop - Schedule 3 items 
+SHCAN456 Total amount of SHCCN459 
+SHCAN457 
+SHCAN458 
+SHCAN459
+
+Please add these items as well before writing out the summary and itemgroups
+SHCA9017
+SHCA9028
+SHCA9130
+SHCA9200
+SHCA9220
+SHCAN261
+SHCAN262
+SHCAN444
+SHCAN445
+SHCAN446
+SHCAN447
+
+Make itemGroup ref having these mapping
+Business Contact  -> "BusContact"
+ServiceProvider   -> "ServiceProvider"
+VALTECH           -> "ValTechnique"
+Schedule 2.       -> "Schedule2"
+Schedule 3        -> "Schedule3"
