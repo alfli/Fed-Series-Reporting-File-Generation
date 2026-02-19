@@ -14,21 +14,18 @@ import xmlschema
 # Group Definitions (FRIENDLY itemGroup@ref values)
 # ============================================================
 
-# Friendly refs per your mapping
 SCHEDULE2_REF = "Schedule2"
 SCHEDULE3_REF = "Schedule3"
 BUSINESS_REF  = "BusContact"
 SERVICE_REF   = "ServiceProvider"
 VALTECH_REF   = "ValTechnique"
 
-# Key rs_id within each group (still the real rs_id)
 SCHEDULE2_SEQ_RSID = "SHCDN186"
 SCHEDULE3_SEQ_RSID = "SHCCN186"
 BUSINESS_SEQ_RSID  = "SHCAR069"
 SERVICE_SEQ_RSID   = "SHCAR070"
 VALTECH_KEY_RSID   = "SHCAN448"
 
-# Group contents (rs_id lists)
 SCHEDULE2_RSIDS = [
     "SHCDN186",
     "SHCAN448", "SHCDN460", "SHCDN461", "SHCDN462", "SHCDN463", "SHCDN464",
@@ -108,29 +105,28 @@ def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[s
         return str(seq_value if seq_value is not None else 1)
 
     # Standalone schedule-1 items
-    if rs_id == "SHCA9017":  # Organization Name
+    if rs_id == "SHCA9017":
         return random.choice(COMPANIES)
-    if rs_id == "SHCA9028":  # Street Address
+    if rs_id == "SHCA9028":
         return f"{random.randint(1,99999)} {random.choice(STREETS)}"
-    if rs_id == "SHCA9130":  # City
+    if rs_id == "SHCA9130":
         return random.choice(CITIES)
-    if rs_id == "SHCA9200":  # State
+    if rs_id == "SHCA9200":
         return random.choice(US_STATES)
-    if rs_id == "SHCA9220":  # Zip
+    if rs_id == "SHCA9220":
         return zip5()
-    if rs_id == "SHCAN261":  # Reporting Status 1-4
+    if rs_id == "SHCAN261":
         return str(random.randint(1, 4))
-    if rs_id == "SHCAN262":  # Reporter Type 1-9
+    if rs_id == "SHCAN262":
         return str(random.randint(1, 9))
 
-    # Service provider contact standalone items
-    if rs_id == "SHCAN444":  # Name
+    if rs_id == "SHCAN444":
         return random.choice(NAMES)
-    if rs_id == "SHCAN445":  # Title
+    if rs_id == "SHCAN445":
         return random.choice(TITLES)
-    if rs_id == "SHCAN446":  # Telephone
+    if rs_id == "SHCAN446":
         return phone10()
-    if rs_id == "SHCAN447":  # Email
+    if rs_id == "SHCAN447":
         return "contact@example.com"
 
     # Business contact group items
@@ -147,9 +143,7 @@ def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[s
     if rs_id == "SHCAN263":
         return random.choice(COMPANIES)
 
-    # Schedule 2 items
-    if rs_id == "SHCAN448":  # reporting unit
-        return "".join(random.choice(string.ascii_uppercase) for _ in range(3))
+    # Schedule 2 items (NOTE: SHCAN448 overridden to RU1/RU2 in generator)
     if rs_id == "SHCDN470":
         return random.choice(CURRENCIES)
     if rs_id in ("SHCDN490", "SHCDN472"):
@@ -271,17 +265,13 @@ def generate(
 ) -> None:
     sums: Dict[str, int] = {}
 
-    # For ValTechnique: unique SHCAN448 values used in Schedule2
+    # For ValTechnique: we only want RU1/RU2, based on Schedule2 alternation
     schedule2_units: List[str] = []
     schedule2_units_set: Set[str] = set()
 
-    def new_unique_unit() -> str:
-        while True:
-            v = make_value("SHCAN448")
-            if v not in schedule2_units_set:
-                schedule2_units_set.add(v)
-                schedule2_units.append(v)
-                return v
+    def unit_for_schedule2_index(seq: int) -> str:
+        # seq is 1-based
+        return "RU1" if (seq % 2 == 1) else "RU2"
 
     with open(output_path, "wb") as fh:
         w(fh, '<?xml version="1.0" encoding="UTF-8"?>\n')
@@ -314,7 +304,6 @@ def generate(
 
         # -----------------------------------------------------
         # Standalone Schedule 1 items (NOT in any itemGroup)
-        # Must appear BEFORE itemGroups and BEFORE summaries
         # -----------------------------------------------------
         standalone_items = [
             "SHCA9017", "SHCA9028", "SHCA9130", "SHCA9200", "SHCA9220",
@@ -348,9 +337,11 @@ def generate(
                 sums=sums,
             )
 
-        # Schedule 2 groups (also collect unique SHCAN448)
+        # Schedule 2 groups: alternate SHCAN448 between RU1 and RU2
         for seq in range(1, schedule2_groups + 1):
-            unit = new_unique_unit()
+            unit = unit_for_schedule2_index(seq)
+            schedule2_units_set.add(unit)
+
             write_group_instance(
                 fh,
                 group_ref=SCHEDULE2_REF,
@@ -361,7 +352,13 @@ def generate(
                 sums=sums,
             )
 
-        # ValTechnique groups (one per unique Schedule2 SHCAN448)
+        # ValTechnique groups: only for the units actually used in Schedule2 (RU1 and/or RU2)
+        # Keep deterministic ordering RU1 then RU2 if present.
+        if "RU1" in schedule2_units_set:
+            schedule2_units.append("RU1")
+        if "RU2" in schedule2_units_set:
+            schedule2_units.append("RU2")
+
         for unit in schedule2_units:
             write_group_instance(
                 fh,
