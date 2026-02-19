@@ -11,7 +11,7 @@ import xmlschema
 
 
 # ============================================================
-# Group Definitions (FRIENDLY itemGroup@ref values)
+# Friendly itemGroup@ref mapping (per your request)
 # ============================================================
 
 SCHEDULE2_REF = "Schedule2"
@@ -20,47 +20,54 @@ BUSINESS_REF  = "BusContact"
 SERVICE_REF   = "ServiceProvider"
 VALTECH_REF   = "ValTechnique"
 
+# Key rs_id (still actual rs_id values)
 SCHEDULE2_SEQ_RSID = "SHCDN186"
 SCHEDULE3_SEQ_RSID = "SHCCN186"
 BUSINESS_SEQ_RSID  = "SHCAR069"
 SERVICE_SEQ_RSID   = "SHCAR070"
 VALTECH_KEY_RSID   = "SHCAN448"
 
+SEQ_KEY_VALUE = "yes"
+
+
+# ============================================================
+# Group rs_id lists
+# ============================================================
+
 SCHEDULE2_RSIDS = [
-    "SHCDN186",
-    "SHCAN448", "SHCDN460", "SHCDN461", "SHCDN462", "SHCDN463", "SHCDN464",
+    "SHCDN186",                 # key="yes"
+    "SHCAN448",                 # overridden to RU1/RU2
+    "SHCDN460", "SHCDN461", "SHCDN462", "SHCDN463", "SHCDN464",
     "SHCDN465", "SHCDN466", "SHCDN467", "SHCDN468", "SHCDN486",
     "SHCDN470", "SHCDN471", "SHCDN487", "SHCDN490", "SHCDN472",
     "SHCDN473", "SHCDN474", "SHCDN475", "SHCDN477", "SHCD9914",
 ]
 
 SCHEDULE3_RSIDS = [
-    "SHCCN186",
+    "SHCCN186",                 # key="yes"
     "SHCCN478", "SHCCN456", "SHCCN457", "SHCCN458", "SHCCN459",
     "SHCCN479", "SHCCN480", "SHCCN481", "SHCCN482",
     "SHCCN483", "SHCCN484", "SHCCN485",
 ]
 
 BUSINESS_RSIDS = [
-    "SHCAR069",
+    "SHCAR069",                 # key="yes"
     "SHCAC495", "SHCAC496", "SHCA8902", "SHCA4086",
 ]
 
 SERVICE_RSIDS = [
-    "SHCAR070",
+    "SHCAR070",                 # key="yes"
     "SHCAN263",
 ]
 
 VALTECH_RSIDS = [
-    "SHCAN448",
+    "SHCAN448",                 # key="yes" and itemValue is RU1/RU2
     "SHCAN449",
 ]
 
-SEQ_KEY_VALUE = "yes"
-
 
 # ============================================================
-# Value Generators (basic; extend as needed)
+# Generators
 # ============================================================
 
 US_STATES = ["NY", "CA", "TX", "IL", "WA"]
@@ -70,6 +77,9 @@ NAMES = ["Alex Kim", "Jordan Lee", "Taylor Chen"]
 TITLES = ["Manager", "Director", "VP"]
 CITIES = ["New York", "Chicago", "San Francisco", "Seattle"]
 STREETS = ["Main St", "Market St", "Broadway", "1st Ave", "2nd Ave"]
+EMAIL_DOMAINS = ["example.com", "bank.com", "corp.net"]
+
+SHCDN486_ALLOWED = ["13307", "10251", "16209", "16527"]  # 5-digit allowed set
 
 def digits(n: int) -> str:
     return "".join(random.choice(string.digits) for _ in range(n))
@@ -83,7 +93,7 @@ def yyyymmdd() -> str:
 
 def mmddyy() -> str:
     dt = datetime.utcnow() - timedelta(days=random.randint(0, 365 * 3))
-    return dt.strftime("%m%d%y")
+    return dt.strftime("%m%d%y")  # 6 digits as used earlier
 
 def phone10() -> str:
     return random.choice("123456789") + digits(9)
@@ -96,6 +106,11 @@ def whole_dollars(max_digits: int) -> str:
     first = random.choice("123456789")
     return first + digits(length - 1) if length > 1 else first
 
+def email80() -> str:
+    user = "".join(random.choice(string.ascii_lowercase) for _ in range(10))
+    dom = random.choice(EMAIL_DOMAINS)
+    return f"{user}@{dom}"[:80]
+
 def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[str] = None) -> str:
     if override is not None:
         return override
@@ -104,7 +119,41 @@ def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[s
     if rs_id in ("SHCDN186", "SHCCN186", "SHCAR069", "SHCAR070"):
         return str(seq_value if seq_value is not None else 1)
 
-    # Standalone schedule-1 items
+    # -----------------------------
+    # New / refined constraints
+    # -----------------------------
+
+    # SHCAC492 email (standalone)
+    if rs_id == "SHCAC492":
+        return email80()
+
+    # Schedule 3 constraints
+    if rs_id == "SHCCN478":  # digit 1 or 2
+        return str(random.choice([1, 2]))
+    if rs_id == "SHCCN479":  # digit 1 or 2
+        return str(random.choice([1, 2]))
+
+    # Schedule 2 constraints
+    if rs_id == "SHCDN461":  # digit 1 or 2
+        return str(random.choice([1, 2]))
+    if rs_id == "SHCDN463":  # number 1..7
+        return str(random.randint(1, 7))
+    if rs_id == "SHCDN467":  # digit 1 or 2
+        return str(random.choice([1, 2]))
+    if rs_id == "SHCDN468":  # number 1..12
+        return str(random.randint(1, 12))
+    if rs_id == "SHCDN486":  # allowed 5-digit set
+        return random.choice(SHCDN486_ALLOWED)
+    if rs_id == "SHCDN471":  # number 1..7
+        return str(random.randint(1, 7))
+
+    # SHCDN475 must be blank
+    if rs_id == "SHCDN475":
+        return ""
+
+    # -----------------------------
+    # Standalone Schedule 1 items
+    # -----------------------------
     if rs_id == "SHCA9017":
         return random.choice(COMPANIES)
     if rs_id == "SHCA9028":
@@ -127,9 +176,11 @@ def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[s
     if rs_id == "SHCAN446":
         return phone10()
     if rs_id == "SHCAN447":
-        return "contact@example.com"
+        return email80()
 
-    # Business contact group items
+    # -----------------------------
+    # Business Contact group items
+    # -----------------------------
     if rs_id == "SHCAC495":
         return random.choice(NAMES)
     if rs_id == "SHCAC496":
@@ -137,31 +188,38 @@ def make_value(rs_id: str, seq_value: Optional[int] = None, override: Optional[s
     if rs_id == "SHCA8902":
         return phone10()
     if rs_id == "SHCA4086":
-        return "user@example.com"
+        return email80()
 
-    # Service provider group item
+    # -----------------------------
+    # Service Provider group item
+    # -----------------------------
     if rs_id == "SHCAN263":
         return random.choice(COMPANIES)
 
-    # Schedule 2 items (NOTE: SHCAN448 overridden to RU1/RU2 in generator)
+    # -----------------------------
+    # Schedule 2 additional items
+    # (SHCAN448 is overridden to RU1/RU2 in generator)
+    # -----------------------------
     if rs_id == "SHCDN470":
         return random.choice(CURRENCIES)
     if rs_id in ("SHCDN490", "SHCDN472"):
         return whole_dollars(12)
     if rs_id == "SHCDN473":
         return whole_dollars(11)
-    if rs_id in ("SHCDN474", "SHCDN475"):
+    if rs_id == "SHCDN474":
         return whole_dollars(13)
     if rs_id in ("SHCDN477", "SHCD9914"):
         return mmddyy()
 
-    # Schedule 3 items
+    # -----------------------------
+    # Schedule 3 totals
+    # -----------------------------
     if rs_id in ("SHCCN456", "SHCCN457", "SHCCN458", "SHCCN459"):
         return whole_dollars(13)
-    if rs_id == "SHCCN483":
-        return random.choice(US_STATES)
 
+    # -----------------------------
     # Val technique
+    # -----------------------------
     if rs_id == "SHCAN449":
         return "Valuation description"
 
@@ -234,7 +292,7 @@ def write_group_instance(
         else:
             write_report_item(fh, rid, val)
 
-        # accumulation rules
+        # Accumulate totals for summaries
         if rid == "SHCDN490":
             try:
                 sums["S2_SUM_SHCDN490"] = sums.get("S2_SUM_SHCDN490", 0) + int(val)
@@ -265,12 +323,11 @@ def generate(
 ) -> None:
     sums: Dict[str, int] = {}
 
-    # For ValTechnique: we only want RU1/RU2, based on Schedule2 alternation
-    schedule2_units: List[str] = []
-    schedule2_units_set: Set[str] = set()
+    # Schedule2 RU alternation + ValTechnique unique set
+    units_used: Set[str] = set()
 
     def unit_for_schedule2_index(seq: int) -> str:
-        # seq is 1-based
+        # seq is 1-based: odd -> RU1, even -> RU2
         return "RU1" if (seq % 2 == 1) else "RU2"
 
     with open(output_path, "wb") as fh:
@@ -303,12 +360,13 @@ def generate(
         text_tag(fh, "estimation", "None")
 
         # -----------------------------------------------------
-        # Standalone Schedule 1 items (NOT in any itemGroup)
+        # Standalone items before itemGroups + summaries
         # -----------------------------------------------------
         standalone_items = [
             "SHCA9017", "SHCA9028", "SHCA9130", "SHCA9200", "SHCA9220",
             "SHCAN261", "SHCAN262",
             "SHCAN444", "SHCAN445", "SHCAN446", "SHCAN447",
+            "SHCAC492",
         ]
         for rid in standalone_items:
             write_report_item(fh, rid, make_value(rid))
@@ -337,10 +395,10 @@ def generate(
                 sums=sums,
             )
 
-        # Schedule 2 groups: alternate SHCAN448 between RU1 and RU2
+        # Schedule 2 groups (alternate SHCAN448 = RU1/RU2)
         for seq in range(1, schedule2_groups + 1):
             unit = unit_for_schedule2_index(seq)
-            schedule2_units_set.add(unit)
+            units_used.add(unit)
 
             write_group_instance(
                 fh,
@@ -352,22 +410,17 @@ def generate(
                 sums=sums,
             )
 
-        # ValTechnique groups: only for the units actually used in Schedule2 (RU1 and/or RU2)
-        # Keep deterministic ordering RU1 then RU2 if present.
-        if "RU1" in schedule2_units_set:
-            schedule2_units.append("RU1")
-        if "RU2" in schedule2_units_set:
-            schedule2_units.append("RU2")
-
-        for unit in schedule2_units:
-            write_group_instance(
-                fh,
-                group_ref=VALTECH_REF,
-                rs_ids=VALTECH_RSIDS,
-                key_rsid=VALTECH_KEY_RSID,
-                overrides={"SHCAN448": unit},
-                sums=sums,
-            )
+        # ValTechnique groups (only RU1 and/or RU2, deterministic order)
+        for unit in ("RU1", "RU2"):
+            if unit in units_used:
+                write_group_instance(
+                    fh,
+                    group_ref=VALTECH_REF,
+                    rs_ids=VALTECH_RSIDS,
+                    key_rsid=VALTECH_KEY_RSID,
+                    overrides={"SHCAN448": unit},
+                    sums=sums,
+                )
 
         # Schedule 3 groups
         for seq in range(1, schedule3_groups + 1):
